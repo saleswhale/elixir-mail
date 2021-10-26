@@ -138,13 +138,13 @@ defmodule Mail.Parsers.RFC2822Test do
     assert erl_from_timestamp("03 Apr 2017 12:30:55 GMT") == {{2017, 4, 3}, {12, 30, 55}}
     # The spec specifies that the seconds are optional
     assert erl_from_timestamp("14 Jun 2019 11:24 +0000") == {{2019, 6, 14}, {11, 24, 0}}
-    assert erl_from_timestamp("28 JUN 2021 09:10 +0200") == {{2021, 6, 28}, {9, 10, 0}}
+    assert erl_from_timestamp("28 JUN 2021 09:10 +0200") == {{2021, 6, 28}, {7, 10, 0}}
   end
 
   test "erl_from_timestamp\1 with invalid RFC2822 timestamps (found in the wild)" do
     import Mail.Parsers.RFC2822, only: [erl_from_timestamp: 1]
 
-    assert erl_from_timestamp("Thu, 16 May 2019 5:50:53 +0700") == {{2019, 5, 16}, {5, 50, 53}}
+    assert erl_from_timestamp("Thu, 16 May 2019 5:50:53 +0700") == {{2019, 5, 15}, {22, 50, 53}}
   end
 
   test "parse_recipient_value retrieves a list of name and addresses" do
@@ -265,7 +265,7 @@ defmodule Mail.Parsers.RFC2822Test do
     assert message.headers["received"] == [
              [
                "by 101.102.103.104 with SMTP id abcdefg",
-               {"date", {{2016, 4, 1}, {11, 8, 31}}}
+               {"date", {{2016, 4, 1}, {18, 8, 31}}}
              ]
            ]
 
@@ -296,15 +296,15 @@ defmodule Mail.Parsers.RFC2822Test do
     assert message.headers["received"] == [
              [
                "from localhost ([127.0.0.1]) by localhost (MyMailSoftware)",
-               {"date", {{2016, 4, 1}, {11, 8, 31}}}
+               {"date", {{2016, 4, 1}, {18, 8, 31}}}
              ],
              [
                "from mail.fake.tld ([10.10.10.10]) by localhost ([127.0.0.1])",
-               {"date", {{2016, 4, 1}, {11, 8, 35}}}
+               {"date", {{2016, 4, 1}, {18, 8, 35}}}
              ],
              [
                "from mail3.example.tld ([10.20.30.40]) by mail.fake.tld ([10.10.10.10])",
-               {"date", {{2016, 4, 1}, {11, 9, 7}}}
+               {"date", {{2016, 4, 1}, {18, 9, 7}}}
              ]
            ]
   end
@@ -465,7 +465,7 @@ defmodule Mail.Parsers.RFC2822Test do
              ],
              [
                "by 2002:a81:578e:0:0:0:0:0 with SMTP id l136csp2273163ywb",
-               {"date", {{2019, 6, 22}, {17, 59, 49}}}
+               {"date", {{2019, 6, 23}, {0, 59, 49}}}
              ]
            ]
   end
@@ -515,7 +515,7 @@ defmodule Mail.Parsers.RFC2822Test do
     assert message.headers["received"] == [
              [
                "from w.x.y.z ([1.1.1.1]) by x.y.local with InterScan Messaging Security Suite",
-               {"date", {{2019, 11, 25}, {13, 0, 46}}}
+               {"date", {{2019, 11, 25}, {11, 0, 46}}}
              ],
              [
                "from x.x.x.x\tby Spam Quarantine V01-06377SMG01.x.x.x (x.x.x.x) for <x@example.com>",
@@ -531,7 +531,7 @@ defmodule Mail.Parsers.RFC2822Test do
                {"date", {{2017, 6, 20}, {9, 44, 58}}}
              ],
              ["from trusted client by mx4.sika.com", {"date", {{2017, 5, 30}, {15, 29, 15}}}],
-             ["from local-ip[x.x.x.x] by FTGS", {"date", {{2014, 12, 28}, {20, 4, 31}}}]
+             ["from local-ip[x.x.x.x] by FTGS", {"date", {{2014, 12, 28}, {18, 4, 31}}}]
            ]
   end
 
@@ -556,7 +556,7 @@ defmodule Mail.Parsers.RFC2822Test do
     assert message.headers["received"] == [
              [
                "from smtp.notes.na.collabserv.com (192.155.248.91)\tby d50lp03.ny.us.ibm.com (158.87.18.22) with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted (version=TLSv1/SSLv3 cipher=AES128-GCM-SHA256 bits=128/128)",
-               {"date", {{2017, 6, 8}, {4, 22, 53}}}
+               {"date", {{2017, 6, 8}, {8, 22, 53}}}
              ]
            ]
   end
