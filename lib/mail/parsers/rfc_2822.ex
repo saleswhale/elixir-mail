@@ -44,8 +44,6 @@ defmodule Mail.Parsers.RFC2822 do
   Parses a RFC2822 timestamp to an Erlang timestamp
 
   [RFC2822 3.3 - Date and Time Specification](https://tools.ietf.org/html/rfc2822#section-3.3)
-
-  Timezone information is ignored
   """
   def erl_from_timestamp(<<" ", rest::binary>>), do: erl_from_timestamp(rest)
   def erl_from_timestamp(<<"\t", rest::binary>>), do: erl_from_timestamp(rest)
@@ -81,7 +79,7 @@ defmodule Mail.Parsers.RFC2822 do
   def erl_from_timestamp(
         <<date::binary-size(2), " ", month::binary-size(3), " ", year::binary-size(4), " ",
           hour::binary-size(2), ":", minute::binary-size(2), ":", second::binary-size(2), " ",
-          _timezone::binary-size(5), _rest::binary>>
+          timezone::binary>>
       ) do
     year = year |> String.to_integer()
     month_name = String.downcase(month)
@@ -91,8 +89,12 @@ defmodule Mail.Parsers.RFC2822 do
     hour = hour |> String.to_integer()
     minute = minute |> String.to_integer()
     second = second |> String.to_integer()
+    offset = offset_from_timezone(timezone)
 
     {{year, month, date}, {hour, minute, second}}
+    |> :calendar.datetime_to_gregorian_seconds()
+    |> then(&(&1 - offset))
+    |> :calendar.gregorian_seconds_to_datetime()
   end
 
   def erl_from_timestamp(
@@ -158,6 +160,36 @@ defmodule Mail.Parsers.RFC2822 do
     erl_from_timestamp("#{date} #{month_name} #{year} #{hour}:#{minute}:#{second}#{rest}")
   end
 
+  defp offset_from_timezone("UT"), do: 0
+  defp offset_from_timezone("UTC"), do: 0
+  defp offset_from_timezone("GMT"), do: 0
+  defp offset_from_timezone("EDT"), do: -4 * 3600
+  defp offset_from_timezone("EST"), do: -5 * 3600
+  defp offset_from_timezone("CDT"), do: -5 * 3600
+  defp offset_from_timezone("CST"), do: -6 * 3600
+  defp offset_from_timezone("MDT"), do: -6 * 3600
+  defp offset_from_timezone("MST"), do: -7 * 3600
+  defp offset_from_timezone("PDT"), do: -7 * 3600
+  defp offset_from_timezone("PST"), do: -8 * 3600
+
+  defp offset_from_timezone(<<"(", tz::binary-size(3), ")", _::binary>>),
+    do: offset_from_timezone(tz)
+
+  defp offset_from_timezone(<<"(", tz::binary-size(5), ")", _::binary>>),
+    do: offset_from_timezone(tz)
+
+  defp offset_from_timezone(<<"(", tz::binary-size(6), ")", _::binary>>),
+    do: offset_from_timezone(tz)
+
+  defp offset_from_timezone(<<sign::binary-size(1), hh::binary-size(2), ":", mm::binary-size(2), _::binary>>),
+    do: offset_from_timezone(sign <> hh <> mm)
+
+  defp offset_from_timezone(<<"-", hhmm::binary-size(4), _::binary>>),
+    do: -offset_from_timezone("+" <> hhmm)
+
+  defp offset_from_timezone(<<"+", hh::binary-size(2), mm::binary-size(2), _::binary>>),
+    do: String.to_integer(hh) * 3600 + String.to_integer(mm) * 60
+
   @doc """
   Retrieves the "name" and "address" parts from an email message recipient
   (To, CC, etc.). The following is an example of recipient value:
@@ -197,7 +229,7 @@ defmodule Mail.Parsers.RFC2822 do
     [name, body] = String.split(header, ":", parts: 2)
     key = String.downcase(name)
     decoded = parse_encoded_word(body)
-    headers = put_header(message.headers, key, parse_header_value(name, decoded))
+    headers = put_header(message.headers, key, parse_header_value(key, decoded))
     message = %{message | headers: headers}
     parse_headers(message, tail)
   end
@@ -223,32 +255,35 @@ defmodule Mail.Parsers.RFC2822 do
   defp parse_header_value(key, "\t" <> value),
     do: parse_header_value(key, value)
 
-  defp parse_header_value("To", value),
+  defp parse_header_value("to", value),
     do: parse_recipient_value(value)
 
-  defp parse_header_value("CC", value),
+  defp parse_header_value("cc", value),
     do: parse_recipient_value(value)
 
-  defp parse_header_value("From", value),
+  defp parse_header_value("bcc", value),
+    do: parse_recipient_value(value)
+
+  defp parse_header_value("from", value),
     do:
       parse_recipient_value(value)
       |> List.first()
 
-  defp parse_header_value("Reply-To", value),
+  defp parse_header_value("reply-to", value),
     do:
       parse_recipient_value(value)
       |> List.first()
 
-  defp parse_header_value("Date", timestamp),
+  defp parse_header_value("date", timestamp),
     do: erl_from_timestamp(timestamp)
 
-  defp parse_header_value("Received", value),
+  defp parse_header_value("received", value),
     do: parse_received_value(value)
 
-  defp parse_header_value("Content-Type", value),
+  defp parse_header_value("content-type", value),
     do: parse_structured_header_value(value)
 
-  defp parse_header_value("Content-Disposition", value),
+  defp parse_header_value("content-disposition", value),
     do: parse_structured_header_value(value)
 
   defp parse_header_value(_key, value),
