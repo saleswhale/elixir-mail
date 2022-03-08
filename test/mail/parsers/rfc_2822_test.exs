@@ -133,12 +133,14 @@ defmodule Mail.Parsers.RFC2822Test do
     assert erl_from_timestamp("1 Feb 2016 01:02:03 +0000") == {{2016, 2, 1}, {1, 2, 3}}
     assert erl_from_timestamp(" 1 Mar 2016 11:12:13 +0000") == {{2016, 3, 1}, {11, 12, 13}}
     assert erl_from_timestamp("\t1 Apr 2016 22:33:44 +0000") == {{2016, 4, 1}, {22, 33, 44}}
-    assert erl_from_timestamp("12 Jan 2016 00:00:00 +0000") == {{2016, 1, 12}, {0, 0, 0}}
+    assert erl_from_timestamp("12 Jan 2016 00:00:00 +0000 ") == {{2016, 1, 12}, {0, 0, 0}}
     assert erl_from_timestamp("25 Dec 2016 00:00:00 +0000 (UTC)") == {{2016, 12, 25}, {0, 0, 0}}
     assert erl_from_timestamp("03 Apr 2017 12:30:55 GMT") == {{2017, 4, 3}, {12, 30, 55}}
+    assert erl_from_timestamp("07 Mar 2022 22:19:17 UTC ") == {{2022, 3, 7}, {22, 19, 17}}
     # The spec specifies that the seconds are optional
     assert erl_from_timestamp("14 Jun 2019 11:24 +0000") == {{2019, 6, 14}, {11, 24, 0}}
     assert erl_from_timestamp("28 JUN 2021 09:10 +0200") == {{2021, 6, 28}, {7, 10, 0}}
+    assert erl_from_timestamp("Tue, 1 Mar 2022 19:13 +0800 ") == {{2022, 3, 1}, {11, 13, 00}}
   end
 
   test "erl_from_timestamp\1 with invalid RFC2822 timestamps (found in the wild)" do
