@@ -89,7 +89,7 @@ defmodule Mail.Parsers.RFC2822 do
     hour = hour |> String.to_integer()
     minute = minute |> String.to_integer()
     second = second |> String.to_integer()
-    offset = offset_from_timezone(timezone)
+    offset = timezone |> String.trim() |> offset_from_timezone()
 
     {{year, month, date}, {hour, minute, second}}
     |> :calendar.datetime_to_gregorian_seconds()
